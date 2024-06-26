@@ -1,0 +1,101 @@
+<!-- 
+Copyright (c) [2024] [Erik Unnasch]
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Biased Chatbot</title>
+    <link rel="stylesheet" href="static\style.css">
+</head>
+<body>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <div class="container">
+        <h1>Du fragst, ich antworte :)</h1>
+        <div class="chat-box">
+            {% for chat in chat_history %}
+                <div class="chat-message user-message">{{ chat.user }}</div> <!-- Benutzer-Nachrichten -->
+                <div class="chat-message bot-response">{{ chat.bot }}</div> <!-- Bot-Antworten -->
+            {% endfor %}
+            <!-- Loader hier, zunächst unsichtbar -->
+            <div class="chat-message bot-response loader" style="display: none;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <form action="/ask" method="post">
+            <input type="text" name="user_input" placeholder="Stelle eine Frage" required>
+            <button type="submit">Fragen</button>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+    $('form').on('submit', function(e) {
+        e.preventDefault(); // Verhindert das Neuladen der Seite
+        
+        // Prüfe, ob die Chatbox bereits sichtbar ist
+        if ($('.chat-box').css('display') == 'none') {
+            $('.chat-box').show(); // Zeige die Chatbox an
+        }
+
+        var userInput = $('input[name="user_input"]').val();
+        
+        // Füge die Benutzerfrage sofort in den Chat ein
+        $('.chat-box').append('<div class="chat-message user-message">' + userInput + '</div>');
+        
+        // Zeige den Loader direkt nach der Benutzerfrage an
+        showLoader();
+
+        // Sendet die Anfrage mit AJAX
+        $.post('/ask', {user_input: userInput}, function(data) {
+            // Entferne den Loader, sobald die Antwort empfangen wurde
+            hideLoader();
+
+            // Füge die Antwort des Bots in den Chat ein
+            $('.chat-box').append('<div class="chat-message bot-response">' + data.bot_response + '</div>');
+
+            // Bereinige das Eingabefeld und aktualisiere den Scroll
+            $('input[name="user_input"]').val('');
+            updateScroll();
+        });
+    });
+});
+
+function showLoader() {
+    // Entferne den Loader, falls bereits vorhanden, um Duplikate zu vermeiden
+    $('.loader').remove();
+    
+    // Erstelle den Loader neu und füge ihn am Ende der Chatbox hinzu
+    var loaderHtml = '<div class="chat-message bot-response loader"><span></span><span></span><span></span></div>';
+    $('.chat-box').append(loaderHtml);
+    updateScroll(); // Scroll zur neuesten Nachricht/Loader
+}
+
+function hideLoader() {
+    // Entferne den Loader aus der Chatbox
+    $('.loader').remove();
+}
+
+function updateScroll() {
+    var chatBox = $('.chat-box');
+    chatBox.scrollTop(chatBox.prop("scrollHeight"));
+}
+
+    </script>
+</body>
+</html>
